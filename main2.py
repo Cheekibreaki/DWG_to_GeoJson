@@ -1,5 +1,22 @@
 from osgeo import ogr
 
+
+def findFeatureForLabel (label_geometry,dxf_layer):
+    for feature in dxf_layer:
+        geometry = feature.GetGeometryRef()
+        type = geometry.GetGeometryType()
+        
+        if(type == ogr.wkbPolygon or type == ogr.wkbLineString or type == ogr.wkbMultiLineString):
+            xmin, xmax, ymin, ymax = geometry.GetEnvelope() 
+            if(label_geometry.GetX()<xmax and 
+               label_geometry.GetX()>xmin and 
+               label_geometry.GetY()>ymin and 
+               label_geometry.GetY()<ymax    ):
+                return feature.GetFID()
+    return None
+           
+        
+
 dxf_file = r"E:\react-naitve project\campus\src\assets\Bahen Indoor building layout\DXF\Drawing1test.dxf"
 output_dir = r"E:\react-naitve project\campus\src\assets\Bahen Indoor building layout\DXF\\"
 dxf_driver = ogr.GetDriverByName("DXF")
@@ -24,8 +41,17 @@ for dxf_layer in dxf_dataSource:
 
         text_value = feature.GetFieldAsString("Text")
         print("Text Value:", text_value)
-
+        
         geometry = feature.GetGeometryRef()
+        type = geometry.GetGeometryType()
+        # type_str = ogr.GeometryTypeToName(type)
+        
+        if(type == ogr.wkbPoint):
+            featureIDIncludeLabel = findFeatureForLabel(geometry,dxf_layer)
+            if(featureIDIncludeLabel != None):
+                print("Feature ID include label is ", featureIDIncludeLabel)
+            
+            
         geojson_feature = ogr.Feature(geojson_layer.GetLayerDefn())
         geojson_feature.SetGeometry(geometry)
         geojson_layer.CreateFeature(geojson_feature)
