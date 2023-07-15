@@ -2,8 +2,10 @@ from osgeo import ogr
 import collections
 
 
+
 def findFeatureForLabel (label_geometry,roomNUM,store_info):
-    
+
+
     dxf_file = r"E:\react-naitve project\campus\src\assets\Bahen Indoor building layout\DXF\Drawing1test.dxf"
     dxf_driver = ogr.GetDriverByName("DXF")
     dxf_dataSource = dxf_driver.Open(dxf_file, 1)
@@ -29,12 +31,13 @@ def findFeatureForLabel (label_geometry,roomNUM,store_info):
                 
                 if(xmax > label_geometry.GetX() > xmin and
                     ymin < label_geometry.GetY() < ymax):
+
                     # feature = ogr.Feature(geojson_layer.GetLayerDefn())
                     # feature.SetField("room", roomNUM)
                     store_info[feature.GetFID()] = roomNUM
                     dxf_dataSource = None
-                    return  feature.GetFID()
-    dxf_dataSource = None
+
+ 
     return None
            
         
@@ -73,6 +76,8 @@ for dxf_layer in dxf_dataSource:
             if(featureIDIncludeLabel != None):
                 print("Feature ID include label is ", featureIDIncludeLabel)
 
+
+
     # Loop through the features in the current layer and convert them to GeoJSON
     for feature in dxf_layer:
         feature_id = feature.GetFID()
@@ -85,6 +90,7 @@ for dxf_layer in dxf_dataSource:
         type = geometry.GetGeometryType()
         type_str = ogr.GeometryTypeToName(type)
         print("typestr:", type_str)
+
         if(type_str != "3D Point"):
 
             geojson_feature = ogr.Feature(geojson_layer.GetLayerDefn())
@@ -101,6 +107,8 @@ for dxf_layer in dxf_dataSource:
 
 
         
+
+
 
     # featureIDIncludeLabel = findFeatureForLabel(label_geometry,dxf_layer)
 

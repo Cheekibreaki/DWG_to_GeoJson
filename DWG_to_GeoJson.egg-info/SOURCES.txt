@@ -1,0 +1,6 @@
+main.py
+setup.py
+DWG_to_GeoJson.egg-info/PKG-INFO
+DWG_to_GeoJson.egg-info/SOURCES.txt
+DWG_to_GeoJson.egg-info/dependency_links.txt
+DWG_to_GeoJson.egg-info/top_level.txt
