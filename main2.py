@@ -3,68 +3,40 @@ import collections
 from osgeo import ogr, osr
 import math
 
-reference_lat = 43.66001549439409
-reference_lon = -79.39736438779232
+
+reference_lat = 43.65923740619973
+reference_lon = -79.39784311817914
+bearing_diff = 16.5
+x_offset = -8
+y_offset = -2.5
+height = 0
+
+layer_name = "indoor_3d_map"
+
+from geopy.distance import distance#, VincentyDistance
+from geopy.point import Point
 
 
-# def calculate_destination_point(lat1, lon1, d, tc):
-#     lat1 = math.radians(lat1)
-#     lon1 = math.radians(lon1)
-#     tc = math.radians(tc)
-#     d = math.radians(d)
+def calculate_new_coordinates(latitude, longitude, x, y,bearing_diff, height, x_offset,y_offset):
+    y = y+y_offset
+    x = x+x_offset
+    length = math.sqrt(y**2 + x**2)
+    bearing = math.atan2(y, x)
+    bearing_degrees = math.degrees(bearing)
     
-#     lat = math.degrees(math.asin(math.sin(lat1) * math.cos(d) + math.cos(lat1) * math.sin(d) * math.cos(tc)))
-    
-#     if math.cos(math.radians(lat)) == 0:
-#         lon = lon1  # endpoint at a pole
-#     else:
-#         lon = (lon1 - math.asin(math.sin(tc) * math.sin(d) / math.cos(math.radians(lat))) + math.pi) % (2 * math.pi) - math.pi
-    
-#     return math.degrees(lat), math.degrees(lon)
+    # Create a Point object with the original coordinates
+    original_point = Point(latitude, longitude)
 
-def convert_meters_to_latlon2(x, y, reference_lat, reference_lon):
-    ref_utm_x, ref_utm_y = latlon_to_utm(reference_lat,reference_lon)
-    result_utm_x = ref_utm_x + x
-    result_utm_y = ref_utm_y - y
-    result_lat,result_lon = utm_to_latlon(result_utm_x, result_utm_y, 17, northern_hemisphere=True)
-    print(result_lat,result_lon)
-    return result_lon,result_lat
-    
-def latlon_to_utm(lat, lon):
-    # Create a spatial reference object for WGS84 (EPSG:4326)
-    wgs84_srs = osr.SpatialReference()
-    wgs84_srs.ImportFromEPSG(4326)
+    # Calculate the distance to move (100 meters)
+    distance_to_move = distance(meters=length)
 
-    # Create a spatial reference object for UTM (EPSG:326XX, where XX is the UTM zone)
-    utm_srs = osr.SpatialReference()
-    utm_srs.SetUTM(17, True)  # Example: UTM zone 1 in the northern hemisphere
-    # utm_srs.SetUTM(1, False)  # Example: UTM zone 1 in the southern hemisphere
+    # Use the destination method to get the new coordinates
+    new_point = distance_to_move.destination(point=original_point, bearing=bearing_degrees-bearing_diff)
 
-    # Create a coordinate transformation object
-    transform = osr.CoordinateTransformation(wgs84_srs, utm_srs)
+    # Extract the latitude and longitude from the new point
+    new_latitude, new_longitude = new_point.latitude, new_point.longitude
 
-    # Transform the lat/lon coordinates to UTM
-    utm_x, utm_y, _ = transform.TransformPoint(lon, lat)
-
-    return utm_x, utm_y
-
-def utm_to_latlon(utm_x, utm_y, utm_zone_number, northern_hemisphere=True):
-    # Create a spatial reference object for UTM (EPSG:326XX, where XX is the UTM zone)
-    utm_srs = osr.SpatialReference()
-    utm_srs.SetUTM(utm_zone_number, northern_hemisphere)
-
-    # Create a spatial reference object for WGS84 (EPSG:4326)
-    wgs84_srs = osr.SpatialReference()
-    wgs84_srs.ImportFromEPSG(4326)
-
-    # Create a coordinate transformation object
-    transform = osr.CoordinateTransformation(utm_srs, wgs84_srs)
-
-    # Transform the UTM coordinates to lat/lon
-    lon, lat, _ = transform.TransformPoint(utm_x, utm_y)
-
-    return lat, lon
-
+    return new_longitude,new_latitude
 
 
 
@@ -139,14 +111,13 @@ def findFeatureForLabel (label_geometry,roomNUM,store_info):
         
 
 dxf_file = r"E:\react-naitve project\campus\src\assets\Bahen Indoor building layout\DXF\Drawing1test.dxf"
-output_dir = r"E:\react-naitve project\campus\src\assets\Bahen Indoor building layout\DXF\\"
+output_dir = r"E:\react-naitve project\campus\src\assets\\"
 dxf_driver = ogr.GetDriverByName("DXF")
 dxf_dataSource = dxf_driver.Open(dxf_file, 1)
 print(dxf_dataSource)
 for dxf_layer in dxf_dataSource:
-    layer_name = dxf_layer.GetName()
     print(layer_name)
-    output_geojson = output_dir + layer_name + ".geojson"
+    output_geojson = output_dir + layer_name + ".json"
     print(output_geojson)
     # Create a new GeoJSON file for the current layer
     geojson_driver = ogr.GetDriverByName("GeoJSON")
@@ -156,6 +127,12 @@ for dxf_layer in dxf_dataSource:
     geojson_layer = geojson_dataSource.CreateLayer(layer_name, geom_type=ogr.wkbUnknown)
 
     field_defn = ogr.FieldDefn( "room", ogr.OFTString )
+    field_defn.SetWidth( 32 )
+    geojson_layer.CreateField ( field_defn )
+    field_defn = ogr.FieldDefn( "height", ogr.OFTString )
+    field_defn.SetWidth( 32 )
+    geojson_layer.CreateField ( field_defn )
+    field_defn = ogr.FieldDefn( "base_height", ogr.OFTString )
     field_defn.SetWidth( 32 )
     geojson_layer.CreateField ( field_defn )
 
@@ -187,7 +164,7 @@ for dxf_layer in dxf_dataSource:
         if(type_str != "3D Point"):
 
             geojson_feature = ogr.Feature(geojson_layer.GetLayerDefn())
-            geojson_feature.SetField("room", "foo")
+            geojson_feature.SetField("room", "unknown")
             for featureID,roomID in feature_with_label.items():
                 if(featureID == feature.GetFID()):
                     geojson_feature.SetField("room", roomID)  
@@ -198,10 +175,12 @@ for dxf_layer in dxf_dataSource:
             
             for i in range(len(coords)):
                 #result=calculate_destination_point(reference_lat, reference_lon, math.sqrt(coords[i][0]**2 + coords[i][1]**2) , math.degrees(math.atan2(coords[i][1], coords[i][0])))
-                result=convert_meters_to_latlon2(coords[i][0], coords[i][1], reference_lat, reference_lon)
+                result=calculate_new_coordinates(reference_lat, reference_lon,coords[i][1], coords[i][0], bearing_diff, x_offset,y_offset ,height)
                 print(result)
                 geometry.SetPoint_2D(i,result[0],result[1])
-            geojson_feature.SetGeometry(geometry)                      
+            geojson_feature.SetGeometry(geometry)          
+            geojson_feature.SetField("height", height)  
+            geojson_feature.SetField("base_height", height)  
             geojson_layer.CreateFeature(geojson_feature)
 
         geojson_feature = None
