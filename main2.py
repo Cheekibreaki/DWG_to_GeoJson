@@ -7,9 +7,9 @@ import math
 reference_lat = 43.65923740619973
 reference_lon = -79.39784311817914
 bearing_diff = 16.5
-x_offset = -8
+x_offset = -7
 y_offset = -2.5
-height = 0
+height = 30
 
 layer_name = "indoor_3d_map"
 
@@ -129,10 +129,10 @@ for dxf_layer in dxf_dataSource:
     field_defn = ogr.FieldDefn( "room", ogr.OFTString )
     field_defn.SetWidth( 32 )
     geojson_layer.CreateField ( field_defn )
-    field_defn = ogr.FieldDefn( "height", ogr.OFTString )
+    field_defn = ogr.FieldDefn( "height", ogr.OFTInteger )
     field_defn.SetWidth( 32 )
     geojson_layer.CreateField ( field_defn )
-    field_defn = ogr.FieldDefn( "base_height", ogr.OFTString )
+    field_defn = ogr.FieldDefn( "base_height", ogr.OFTInteger )
     field_defn.SetWidth( 32 )
     geojson_layer.CreateField ( field_defn )
 
@@ -175,7 +175,7 @@ for dxf_layer in dxf_dataSource:
             
             for i in range(len(coords)):
                 #result=calculate_destination_point(reference_lat, reference_lon, math.sqrt(coords[i][0]**2 + coords[i][1]**2) , math.degrees(math.atan2(coords[i][1], coords[i][0])))
-                result=calculate_new_coordinates(reference_lat, reference_lon,coords[i][1], coords[i][0], bearing_diff, x_offset,y_offset ,height)
+                result=calculate_new_coordinates(reference_lat, reference_lon,coords[i][1], coords[i][0],  bearing_diff, height, x_offset,y_offset )
                 print(result)
                 geometry.SetPoint_2D(i,result[0],result[1])
             geojson_feature.SetGeometry(geometry)          
