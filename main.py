@@ -15,9 +15,9 @@ dxf_folder_list = \
     "reference_lat" : 43.65923740619973,
     "reference_lon" : -79.39784311817914,
     "bearing_diff" : 16.5,
-    "x_offset" : -7,
+    "x_offset" : -20,
     "y_offset" : -2.5,
-    "height" : 30
+    "height" : 0
 },{
     "layer_name" : "BA_Indoor_2",
     "floor" : 2 ,
@@ -27,9 +27,9 @@ dxf_folder_list = \
     "reference_lat" : 43.65923740619973,
     "reference_lon" : -79.39784311817914,
     "bearing_diff" : 16.5,
-    "x_offset" : -7,
-    "y_offset" : -2.5,
-    "height" : 30
+    "x_offset" : -20.5,
+    "y_offset" : -26,
+    "height" : 50
 }]
 
 all_building_json = "all_building"
@@ -203,7 +203,7 @@ def writeGeoJson (dxf_file,layer_name,floor_num,color,geo_params,is_all_building
                 linear_ring = ogr.Geometry(ogr.wkbLinearRing)
 
                 for coord in coords:
-                    linear_ring.AddPoint(*coord)
+                    linear_ring.AddPoint_2D(*coord)
 
                 linear_ring.CloseRings()
                 polygon.AddGeometry(linear_ring)
@@ -266,7 +266,7 @@ if __name__ == "__main__":
         room_color = dxf["room_color"]
         contour_color = dxf["contour_color"]
         floor_num = dxf["floor"]
-        writeGeoJson(room_path,room_layer_name,floor_num,room_color,[dxf["reference_lat"],dxf["reference_lon"],dxf["bearing_diff"],dxf["height"],dxf["x_offset"],dxf["y_offset"]],False)
+        writeGeoJson(room_path,room_layer_name,floor_num,room_color,[dxf["reference_lat"],dxf["reference_lon"],dxf["bearing_diff"],dxf["height"]+1,dxf["x_offset"],dxf["y_offset"]],False)
         writeGeoJson(contour_path,contour_layer_name,floor_num,contour_color,[dxf["reference_lat"],dxf["reference_lon"],dxf["bearing_diff"],dxf["height"],dxf["x_offset"],dxf["y_offset"]],False)
 
     input_files = []
