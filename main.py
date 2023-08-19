@@ -71,17 +71,10 @@ def calculate_new_coordinates(latitude, longitude, x, y,bearing_diff, height, x_
     return new_longitude,new_latitude
 
 
-
-
-
-
-
-def findFeatureForLabel (dxf_file,label_geometry,roomNUM,store_info):
-    
+def findFeatureForLabel(dxf_file, label_geometry, roomNUM, store_info):
     print(dxf_file)
     dxf_driver = ogr.GetDriverByName("DXF")
     dxf_dataSource = dxf_driver.Open(dxf_file, 1)
-
 
     # # Clean up and close the new dataset
     for dxf_layer in dxf_dataSource:
@@ -90,19 +83,71 @@ def findFeatureForLabel (dxf_file,label_geometry,roomNUM,store_info):
             type = geometry.GetGeometryType()
             type_str = ogr.GeometryTypeToName(type)
             # print(type_str)
-            if(type_str == "Line String"):
+            if (type_str == "Line String"):
+                coords = []
+                for i in range(geometry.GetPointCount()):
+                    coords.append(geometry.GetPoint_2D(i))
+
+                polygon = ogr.Geometry(ogr.wkbPolygon)
+                linear_ring = ogr.Geometry(ogr.wkbLinearRing)
+
+                for coord in coords:
+                    linear_ring.AddPoint_2D(*coord)
+
+                linear_ring.CloseRings()
+                polygon.AddGeometry(linear_ring)
+
                 # print("find feature for label")
-                xmin, xmax, ymin, ymax = geometry.GetEnvelope() 
-                
-                if(xmax > label_geometry.GetX() > xmin and
-                    ymin < label_geometry.GetY() < ymax):
-                    # feature = ogr.Feature(geojson_layer.GetLayerDefn())
-                    # feature.SetField("room", roomNUM)
+                xmin, xmax, ymin, ymax = geometry.GetEnvelope()
+
+                # if (xmax > label_geometry.GetX() > xmin and
+                #         ymin < label_geometry.GetY() < ymax):
+                #     # feature = ogr.Feature(geojson_layer.GetLayerDefn())
+                #     # feature.SetField("room", roomNUM)
+                #     store_info[feature.GetFID()] = roomNUM
+                #     dxf_dataSource = None
+                #     return feature.GetFID()
+                if label_geometry.Within(polygon):
                     store_info[feature.GetFID()] = roomNUM
                     dxf_dataSource = None
-                    return  feature.GetFID()
+                    return feature.GetFID()
+
     dxf_dataSource = None
     return None
+
+
+
+
+
+
+
+# def findFeatureForLabel (dxf_file,label_geometry,roomNUM,store_info):
+#
+#     print(dxf_file)
+#     dxf_driver = ogr.GetDriverByName("DXF")
+#     dxf_dataSource = dxf_driver.Open(dxf_file, 1)
+#
+#
+#     # # Clean up and close the new dataset
+#     for dxf_layer in dxf_dataSource:
+#         for feature in dxf_layer:
+#             geometry = feature.GetGeometryRef()
+#             type = geometry.GetGeometryType()
+#             type_str = ogr.GeometryTypeToName(type)
+#             # print(type_str)
+#             if(type_str == "Line String"):
+#                 # print("find feature for label")
+#                 xmin, xmax, ymin, ymax = geometry.GetEnvelope()
+#
+#                 if(xmax > label_geometry.GetX() > xmin and
+#                     ymin < label_geometry.GetY() < ymax):
+#                     # feature = ogr.Feature(geojson_layer.GetLayerDefn())
+#                     # feature.SetField("room", roomNUM)
+#                     store_info[feature.GetFID()] = roomNUM
+#                     dxf_dataSource = None
+#                     return  feature.GetFID()
+#     dxf_dataSource = None
+#     return None
            
 def writeGeoJson (dxf_file,layer_name,floor_num,color,geo_params,is_all_building):
 
@@ -180,10 +225,10 @@ def writeGeoJson (dxf_file,layer_name,floor_num,color,geo_params,is_all_building
             if(type_str != "3D Point"):
 
                 geojson_feature = ogr.Feature(geojson_layer.GetLayerDefn())
-                geojson_feature.SetField("room", "unknown")
+                geojson_feature.SetField("room", "")
                 for featureID,roomID in feature_with_label.items():
                     if(featureID == feature.GetFID()):
-                        geojson_feature.SetField("room", roomID)  
+                        geojson_feature.SetField("room", str.upper(roomID))
                         break
 
                 coords = geometry.GetPoints()
